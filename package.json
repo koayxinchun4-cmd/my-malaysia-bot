@@ -1,14 +1,16 @@
 {
-  "name": "malaysia-news-wiki-bot",
-  "version": "1.0.2",
-  "description": "Auto update Malaysia news and weather to GitHub Wiki",
+  "name": "malaysia-super-wiki-bot",
+  "version": "2.0.0",
+  "description": "Malaysia Super Bot with Web Scraper and Try-Catch Protection",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
     "isomorphic-git": "^1.25.1",
     "memfs": "^4.6.0"
   }
 }
+
