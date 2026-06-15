@@ -108,7 +108,7 @@ async function getEntertainment() {
 async function getMcDPromo() {
   try {
     console.log("🍔 正在搜集麥當勞優惠...");
-    return `### 🍔 McD 麥當勞與 GrabFood 隱藏優惠碼\n\n🎁 **麥當勞今日精選好康**：\n- **McD App 優惠**：**雙層牛肉起司堡套餐折價 20%**！\n\n🛵 **GrabFood / FoodPanda 最新可用 Promo Code**：\n- ✨ 使用 `NEWFOOD`：滿 RM25 折 RM8 (限特定新用戶/店家)\n- 🍗 使用 `MAKAN`：部分炸雞外送免運費\n\n> *更新時間：${new Date().toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'})}*`;
+    return `### 🍔 McD 麥當勞與 GrabFood 隱藏優惠碼\n\n🎁 **麥當勞今日精選好康**：\n- **McD App 優惠**：**雙層牛肉起司堡套餐折價 20%**！\n\n🛵 **GrabFood / FoodPanda 最新可用 Promo Code**：\n- ✨ 使用 'NEWFOOD'：滿 RM25 折 RM8 (限特定新用戶/店家)\n- 🍗 使用 'MAKAN'：部分炸雞外送免運費\n\n> *更新時間：${new Date().toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'})}*`;
   } catch (error) {
     return `### 🍔 隱藏優惠與省錢包\n\n⚠️ 暫時無法取得最新優惠券。`;
   }
