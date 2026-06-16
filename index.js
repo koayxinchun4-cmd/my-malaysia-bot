@@ -107,6 +107,8 @@ async function updateMultiPageWiki() {
   const entContent = await getEntertainment();
 
   const updateTime = `*⏰ 訊號最終總更新：${new Date().toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'})} (大馬標準時間)*\n\n`;
+  const todayStr = new Date().toLocaleDateString('en-CA', {timeZone: 'Asia/Kuala_Lumpur'}); 
+// 💡 這行程式碼會跑出像 "2026-06-17" 這樣超乾淨的日期字串！
   
   let homeContent = `## 🇲🇾 大馬綜合情報導覽總部\n\n${updateTime}`;
   homeContent += `歡迎來到您的專屬大馬助理情報站！為了方便閱讀，我已經把所有功能**拆分成了獨立的全新分頁**。請點擊下方連結直接跳轉主頁：\n\n`;
@@ -139,18 +141,38 @@ async function updateMultiPageWiki() {
       depth: 1
     });
 
-    // 寫入 5 個分頁（已移除麥當勞）
-    fs.writeFileSync(path.join(wikiRepoDir, 'Home.md'), homeContent);
-    fs.writeFileSync(path.join(wikiRepoDir, 'Petrol-Price.md'), fuelContent);
-    fs.writeFileSync(path.join(wikiRepoDir, 'BNM-Exchange.md'), rateContent);
-    fs.writeFileSync(path.join(wikiRepoDir, 'KL-Weather.md'), weatherContent);
-    fs.writeFileSync(path.join(wikiRepoDir, 'Malaysia-News.md'), newsContent);
-    fs.writeFileSync(path.join(wikiRepoDir, 'Movie-Info.md'), entContent);
+    
+    // 🔄「最新 + 歷史備份雙軌制」：
+fs.writeFileSync(path.join(wikiRepoDir, 'Home.md'), homeContent);
 
-    const filesToGit = ['Home.md', 'Petrol-Price.md', 'BNM-Exchange.md', 'KL-Weather.md', 'Malaysia-News.md', 'Movie-Info.md'];
-    for (const file of filesToGit) {
-      await git.add({ fs, dir: wikiRepoDir, filepath: file });
-    }
+// 油價：存一份最新、一份歷史
+fs.writeFileSync(path.join(wikiRepoDir, 'Petrol-Price.md'), fuelContent);
+fs.writeFileSync(path.join(wikiRepoDir, `Petrol-Price-${todayStr}.md`), fuelContent);
+
+// 匯率：存一份最新、一份歷史
+fs.writeFileSync(path.join(wikiRepoDir, 'BNM-Exchange.md'), rateContent);
+fs.writeFileSync(path.join(wikiRepoDir, `BNM-Exchange-${todayStr}.md`), rateContent);
+
+// 天氣：存一份最新、一份歷史
+fs.writeFileSync(path.join(wikiRepoDir, 'KL-Weather.md'), weatherContent);
+fs.writeFileSync(path.join(wikiRepoDir, `KL-Weather-${todayStr}.md`), weatherContent);
+
+// 新聞：存一份最新、一份歷史
+fs.writeFileSync(path.join(wikiRepoDir, 'Malaysia-News.md'), newsContent);
+fs.writeFileSync(path.join(wikiRepoDir, `Malaysia-News-${todayStr}.md`), newsContent);
+
+// 電影：存一份最新、一份歷史
+fs.writeFileSync(path.join(wikiRepoDir, 'Movie-Info.md'), entContent);
+fs.writeFileSync(path.join(wikiRepoDir, `Movie-Info-${todayStr}.md`), entContent);
+
+//  自動掃描資料夾裡所有的檔案，不管叫什麼名字通通上傳
+const allFiles = fs.readdirSync(wikiRepoDir); 
+for (const file of allFiles) {
+  if (file !== '.git') {
+    await git.add({ fs, dir: wikiRepoDir, filepath: file });
+  }
+}
+
 
     console.log("🚀 正在推送 5 個全新獨立 Wiki 頁面上雲端...");
     await git.commit({
