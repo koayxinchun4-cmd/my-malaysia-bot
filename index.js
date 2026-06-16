@@ -12,7 +12,7 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const REPO_OWNER = process.env.REPO_OWNER;
 const REPO_NAME = process.env.REPO_NAME;
 
-// ======== 1. 天氣預報功能（有抓蠱） ========
+// ======== 1. 天氣預報功能 ========
 async function getWeather() {
   try {
     console.log("☀️ 正在搜集吉隆坡天氣...");
@@ -24,12 +24,12 @@ async function getWeather() {
   }
 }
 
-// ======== 2. 大馬即時新聞（有抓蠱） ========
+// ======== 2. 大馬即時新聞 ========
 async function getNews() {
   try {
     console.log("📰 正在搜集大馬焦點新聞...");
     const response = await axios.get(`https://newsapi.org/v2/top-headlines?country=my&apiKey=${NEWS_API_KEY}`);
-    const articles = response.data.articles.slice(0, 10); // 多網頁可以放多一點，放10條！
+    const articles = response.data.articles.slice(0, 10);
     let text = `### 📰 大馬即時焦點新聞 (今日 Top 10)\n\n`;
     articles.forEach((art, index) => {
       if (art.title && art.url) {
@@ -42,20 +42,14 @@ async function getNews() {
   }
 }
 
-// ======== 3. 汽油價格爬蟲（真正上網抓 Paul Tan 數據 - 有抓蠱） ========
+// ======== 3. 汽油價格爬蟲 (Paul Tan) ========
 async function getFuelPrice() {
   try {
     console.log("⛽️ 正在爬取大馬 Paul Tan 官網最新油價...");
-    // 1. 遠端攔截 Paul Tan 的油價網頁
     const response = await axios.get('https://paultan.org/category/cars/fuel-prices/', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10)' } // 偽裝成手機上網
+      headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 10)' }
     });
-
-    // 2. 藉由模擬 HTML 交給 cheerio 夾子
     const $ = cheerio.load(response.data);
-
-    // 3. 開始盲包搜刮我們要的油價文字
-    // Paul Tan 的網頁架構通常把最新油價放在前幾段
     let scrapedText = "";
     $('.entry-content p').each((i, el) => {
       const paragraph = $(el).text();
@@ -63,8 +57,6 @@ async function getFuelPrice() {
         scrapedText += paragraph + "\n\n";
       }
     });
-
-    // 萬一網頁沒抓，我們留個限制數字
     const ron95 = "RM 2.05";
     const ron97 = scrapedText.match(/RON 97.*?(RM \d+\.\d+)/)?.[1] || "RM 3.40 (浮動)";
     const diesel = scrapedText.match(/Diesel.*?(RM \d+\.\d+)/)?.[1] || "RM 3.35 (浮動)";
@@ -75,7 +67,7 @@ async function getFuelPrice() {
     return `### ⛽️ 本週大馬最新油價情報\n\n⚠️ Paul Tan 網站的反爬蟲黑洞雷達或結構變更，暫時由助理提供應急數據：\n\n- 🟢 **RON 95**: RM 2.05\n- 🟡 **RON 97**: RM 3.47\n- ⚫ **Diesel**: RM 3.35`;
   }
 }
-// ======== 4. BNM 國家銀行匯率功能（有抓蠱） ========
+// ======== 4. BNM 國家銀行匯率功能 ========
 async function getExchangeRate() {
   try {
     console.log("💱 正在搜集 BNM 匯率...");
@@ -94,7 +86,7 @@ async function getExchangeRate() {
   }
 }
 
-// ======== 5. TGV / GSC 映演功能（有抓蠱） ========
+// ======== 5. TGV / GSC 映演功能 ========
 async function getEntertainment() {
   try {
     console.log("🎬 正在搜集電影院與演藝情報...");
@@ -104,42 +96,28 @@ async function getEntertainment() {
   }
 }
 
-// ======== 6. McD 麥當勞優惠券功能（有抓蠱） ========
-async function getMcDPromo() {
-  try {
-    console.log("🍔 正在搜集麥當勞優惠...");
-    return `### 🍔 McD 麥當勞與 GrabFood 隱藏優惠碼\n\n🎁 **麥當勞今日精選好康**：\n- **McD App 優惠**：**雙層牛肉起司堡套餐折價 20%**！\n\n🛵 **GrabFood / FoodPanda 最新可用 Promo Code**：\n- ✨ 使用 'NEWFOOD'：滿 RM25 折 RM8 (限特定新用戶/店家)\n- 🍗 使用 'MAKAN'：部分炸雞外送免運費\n\n> *更新時間：${new Date().toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'})}*`;
-  } catch (error) {
-    return `### 🍔 隱藏優惠與省錢包\n\n⚠️ 暫時無法取得最新優惠券。`;
-  }
-}
-
 // ======== 🚀 多網頁全核心執行序 ========
 async function updateMultiPageWiki() {
   console.log("⚙️ 多網頁面核心啟動：開始分流採集各大板塊資料...");
 
-  // 平行搜集所有資料
   const weatherContent = await getWeather();
   const newsContent = await getNews();
   const fuelContent = await getFuelPrice();
   const rateContent = await getExchangeRate();
   const entContent = await getEntertainment();
-  const mcdContent = await getMcDPromo();
 
-  // 建立首頁 (Home.md) 的導覽目錄
   const updateTime = `*⏰ 訊號最終總更新：${new Date().toLocaleString('en-US', {timeZone: 'Asia/Kuala_Lumpur'})} (大馬標準時間)*\n\n`;
   
   let homeContent = `## 🇲🇾 大馬綜合情報導覽總部\n\n${updateTime}`;
   homeContent += `歡迎來到您的專屬大馬助理情報站！為了方便閱讀，我已經把所有功能**拆分成了獨立的全新分頁**。請點擊下方連結直接跳轉主頁：\n\n`;
   homeContent += `- 💰 **1. 民生與理財板塊**\n`;
-  homeContent += `  - ⛽ [點我查看：最新汽車油價] (Petrol-Price)\n`;
-  homeContent += `  - 💱 [點我查看：BNM 國際匯率] (BNM-Exchange)\n`;
-  homeContent += `  - 🌦️ [點我查看：吉隆坡今日天氣] (KL-Weather)\n\n`;
+  homeContent += `  - ⛽ [點我查看：最新汽車油價](Petrol-Price)\n`;
+  homeContent += `  - 💱 [點我查看：BNM 國際匯率](BNM-Exchange)\n`;
+  homeContent += `  - 🌦️ [點我查看：吉隆坡今日天氣](KL-Weather)\n\n`;
   homeContent += `- 📰 **2. 社會即時焦點**\n`;
-  homeContent += `  - 🇲🇾 [點我查看：大馬新聞 Top 10] (Malaysia-News)\n\n`;
+  homeContent += `  - 🇲🇾 [點我查看：大馬新聞 Top 10](Malaysia-News)\n\n`;
   homeContent += `- 🍔 **3. 娛樂與吃喝玩樂**\n`;
-  homeContent += `  - 🎬 [點我查看：TGV/GSC 電影強檔] (Movie-Info)\n`;
-  homeContent += `  - 🍟 [點我查看：McD/Grab 隱藏優惠券] (McD-Promo)\n\n`;
+  homeContent += `  - 🎬 [點我查看：TGV/GSC 電影強檔](Movie-Info)\n\n`;
   homeContent += `--- \n> 💡 **防蠱小別註**：每個頁面都是獨立模組化更新的，並備有「自癒系統」，絕不卡死！`;
 
   const wikiRepoDir = path.join(__dirname, 'wiki_repo');
@@ -161,27 +139,25 @@ async function updateMultiPageWiki() {
       depth: 1
     });
 
-    // 📝 核心改進：一口氣在後台寫入 6 個不同的頁面檔案！
+    // 寫入 5 個分頁（已移除麥當勞）
     fs.writeFileSync(path.join(wikiRepoDir, 'Home.md'), homeContent);
     fs.writeFileSync(path.join(wikiRepoDir, 'Petrol-Price.md'), fuelContent);
     fs.writeFileSync(path.join(wikiRepoDir, 'BNM-Exchange.md'), rateContent);
     fs.writeFileSync(path.join(wikiRepoDir, 'KL-Weather.md'), weatherContent);
     fs.writeFileSync(path.join(wikiRepoDir, 'Malaysia-News.md'), newsContent);
     fs.writeFileSync(path.join(wikiRepoDir, 'Movie-Info.md'), entContent);
-    fs.writeFileSync(path.join(wikiRepoDir, 'McD-Promo.md'), mcdContent);
 
-    // 把所有獨立的 md 檔案一次全部納入 Git 的暫存區
-    const filesToGit = ['Home.md', 'Petrol-Price.md', 'BNM-Exchange.md', 'KL-Weather.md', 'Malaysia-News.md', 'Movie-Info.md', 'McD-Promo.md'];
+    const filesToGit = ['Home.md', 'Petrol-Price.md', 'BNM-Exchange.md', 'KL-Weather.md', 'Malaysia-News.md', 'Movie-Info.md'];
     for (const file of filesToGit) {
       await git.add({ fs, dir: wikiRepoDir, filepath: file });
     }
 
-    console.log("🚀 正在推送 6 個全新獨立 Wiki 頁面上雲端...");
+    console.log("🚀 正在推送 5 個全新獨立 Wiki 頁面上雲端...");
     await git.commit({
       fs,
       dir: wikiRepoDir,
       author: { name: 'MalaysiaMultiPageAssistant', email: 'assistant@railway.app' },
-      message: '📝 Created 6 separate wiki pages with auto-layout'
+      message: '📝 Daily Wiki Update at 21:00 MYT'
     });
 
     await git.push({
@@ -193,11 +169,40 @@ async function updateMultiPageWiki() {
       onAuth: () => ({ username: GITHUB_TOKEN })
     });
 
-    console.log("✅ 報告主人！全新 6 個獨立網頁已全數建設完好，導航巴士上車了！");
+    console.log("✅ 報告主人！今日份大馬情報已於晚上 9 點完美打包上線！");
   } catch (error) {
     console.error("❌ 多網頁推進失敗:", error.message);
   }
 }
 
-updateMultiPageWiki();
-setInterval(updateMultiPageWiki, 3600000);
+// ======== ⏰ 智能定時器：精準鎖定大馬時間晚上 9 點 ========
+function scheduleDailyUpdate() {
+  // 1. 先手跑一次：確保每次專案重啟（或開機）時，能立刻拿到最新資料
+  updateMultiPageWiki();
+
+  const now = new Date();
+  // 轉換成大馬（吉隆坡）當前的時間資訊
+  const kualaLumpurTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+  
+  const target = new Date(kualaLumpurTime);
+  target.setHours(21, 0, 0, 0); // 目標設定在當天的 21:00:00
+
+  // 如果現在時間已經超過今天的晚上 9 點，目標就順延到明晚 9 點
+  if (kualaLumpurTime >= target) {
+    target.setDate(target.getDate() + 1);
+  }
+
+  // 計算距離目標時間還有多少毫秒
+  const delay = target.getTime() - kualaLumpurTime.getTime();
+  console.log(`⏰ 定時器已啟動！距離下一次晚上 9 點更新還有 ${(delay / 1000 / 60 / 60).toFixed(2)} 小時。`);
+
+  // 設定第一次等待
+  setTimeout(() => {
+    updateMultiPageWiki();
+    // 第一次觸發後，開啟每 24 小時（86400000 ms）執行一次的循環
+    setInterval(updateMultiPageWiki, 86400000);
+  }, delay);
+}
+
+// 啟動排程系統
+scheduleDailyUpdate();
