@@ -4,6 +4,7 @@ const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node');
 const fs = require('fs');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 // 載入伺服器環境變數
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
@@ -190,8 +191,45 @@ for (const file of allFiles) {
       ref: 'master',
       onAuth: () => ({ username: GITHUB_TOKEN })
     });
+    
+    // 🔍 找到原本的 console.log("✅ 報告主人！..."); 的「上一行」，手動換成這段代碼：
 
-    console.log("✅ 報告主人！今日份大馬情報已於晚上 9 點完美打包上線！");
+    // 📬 1. 配置發信的郵件伺服器（這裡設定使用 Gmail 通道）
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER, // 你的 Gmail 帳號
+        pass: process.env.EMAIL_PASS  // 你的 Gmail 應用程式密碼
+      }
+    });
+
+    // 📝 2. 把今天採集到的精華資料，組裝成電子郵件的內文
+    const emailHtml = `
+      <h2>🔔 大馬綜合情報助理 v3.0.0 日報</h2>
+      <p>主人，大馬時間晚上 9 點已到！今日（<b>${todayStr}</b>）的民生與理財數據已完美封存入庫。</p>
+      <hr/>
+      ${weatherContent}
+      <hr/>
+      ${fuelContent}
+      <hr/>
+      ${rateContent}
+      <hr/>
+      ${entContent}
+      <hr/>
+      <p>🌐 完整歷史日記與精美排版請至：<a href="https://github.com/${REPO_OWNER}/${REPO_NAME}/wiki">GitHub Wiki 總部</a></p>
+    `;
+
+    // 🚀 3. 純 Code 發射！直接寄到你的信箱
+    await transporter.sendMail({
+      from: `"大馬情報助理" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER, // 自己寄給自己，省事又安全
+      subject: `🇲🇾 大馬情報日報 - ${todayStr}`,
+      html: emailHtml // 丟入上面組裝好的精美 Markdown/HTML 內文
+    });
+
+    console.log("📱 郵件快遞已成功發射！請檢查手機 Gmail 通知！");
+
+    
   } catch (error) {
     console.error("❌ 多網頁推進失敗:", error.message);
   }
