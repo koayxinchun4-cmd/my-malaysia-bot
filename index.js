@@ -147,8 +147,14 @@ fs.writeFileSync(path.join(wikiRepoDir, 'Malaysia-News.md'), newsContent);
 fs.writeFileSync(path.join(wikiRepoDir, `Malaysia-News-${todayStr}.md`), newsContent);
 
 // 💥小紅書
-fs.writeFileSync(path.join(wikiRepoDir, 'Xiaohongshu.md'), xhsDraft);
-fs.writeFileSync(path.join(wikiRepoDir, `Xiaohongshu-${todayStr}.md`), xhsDraft);
+// 💥 完美大合體：把小紅書文案和今日新聞原文黏在一起
+const finalContent = `${xhsDraft}\n\n---\n\n### 🔗 
+本日爆款文案對應之新聞原文來源：\n\n${newsContent}`;
+
+// 寫入 Wiki，同時存一份最新、一份歷史
+fs.writeFileSync(path.join(wikiRepoDir, 'Xiaohongshu.md'), finalContent);
+fs.writeFileSync(path.join(wikiRepoDir, `Xiaohongshu-${todayStr}.md`), finalContent);
+
 
 // 電影：存一份最新、一份歷史
 fs.writeFileSync(path.join(wikiRepoDir, 'Movie-Info.md'), entContent);
