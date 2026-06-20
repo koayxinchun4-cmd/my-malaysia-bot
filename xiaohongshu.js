@@ -13,7 +13,8 @@ async function generateXiaohongshuContent(newsContent) {
   }
 
   // 2. 設定 Google Gemini 的網址 (就是主人你挖到的那串 URL)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
 
   // 3. 設定你的爆款小紅書提示詞 (Prompt)
   const prompt = `
