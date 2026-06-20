@@ -148,8 +148,7 @@ fs.writeFileSync(path.join(wikiRepoDir, `Malaysia-News-${todayStr}.md`), newsCon
 
 // 💥小紅書
 // 💥 完美大合體：把小紅書文案和今日新聞原文黏在一起
-const finalContent = `${xhsDraft}\n\n---\n\n### 🔗 
-本日爆款文案對應之新聞原文來源：\n\n${newsContent}`;
+const finalContent = `${xhsDraft}\n\n---\n\n### 🔗 本日爆款文案對應之新聞原文來源：\n\n${newsContent}`;
 
 // 寫入 Wiki，同時存一份最新、一份歷史
 fs.writeFileSync(path.join(wikiRepoDir, 'Xiaohongshu.md'), finalContent);
