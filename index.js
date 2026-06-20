@@ -5,6 +5,7 @@ const http = require('isomorphic-git/http/node');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const { generateXiaohongshuContent } = require('./xiaohongshu.js');
 
 // 載入伺服器環境變數
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
@@ -132,7 +133,11 @@ async function updateMultiPageWiki() {
 
     const wikiUrl = `https://${REPO_OWNER}:${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.wiki.git`;
     console.log("🔄 正在連線 GitHub Wiki 多網頁通道...");
+    // 假設我們想用 newsContent 當素材
+const xhsDraft = await generateXiaohongshuContent(newsContent);
+console.log("✨ AI 已為主人生成小紅書草稿：", xhsDraft);
 
+    
     await git.clone({
       fs,
       http,
