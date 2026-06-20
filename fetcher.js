@@ -3,8 +3,7 @@ const axios = require('axios');
 const cheerio = require('cheerio'); // 因為爬油價需要用到網頁解析工具
 
 // 🛠️ 這裡等一下要放你剪下來的油價函數
-async function getFuelPrice() {
-  // ======== 3. 汽油價格爬蟲 (Paul Tan) ========
+// ======== 3. 汽油價格爬蟲 (Paul Tan) ========
 async function getFuelPrice() {
   try {
     console.log("⛽️ 正在爬取大馬 Paul Tan 官網最新油價...");
