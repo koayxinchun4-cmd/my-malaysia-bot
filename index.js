@@ -97,6 +97,8 @@ async function updateMultiPageWiki() {
   homeContent += `  - 🌦️ [點我查看：吉隆坡今日天氣](KL-Weather)\n\n`;
   homeContent += `- 📰 **2. 社會即時焦點**\n`;
   homeContent += `  - 🇲🇾 [點我查看：大馬新聞 Top 10](Malaysia-News)\n\n`;
+  //這是小紅書在wiki//
+  homeContent += `  - 📕 [點我查看：小紅書爆款文案草稿](Xiaohongshu)\n\n`;
   homeContent += `- 🍔 **3. 娛樂與吃喝玩樂**\n`;
   homeContent += `  - 🎬 [點我查看：TGV/GSC 電影強檔](Movie-Info)\n\n`;
   homeContent += `--- \n> 💡 **防蠱小別註**：每個頁面都是獨立模組化更新的，並備有「自癒系統」，絕不卡死！`;
@@ -143,6 +145,10 @@ fs.writeFileSync(path.join(wikiRepoDir, `KL-Weather-${todayStr}.md`), weatherCon
 // 新聞：存一份最新、一份歷史
 fs.writeFileSync(path.join(wikiRepoDir, 'Malaysia-News.md'), newsContent);
 fs.writeFileSync(path.join(wikiRepoDir, `Malaysia-News-${todayStr}.md`), newsContent);
+
+// 💥小紅書
+fs.writeFileSync(path.join(wikiRepoDir, 'Xiaohongshu.md'), xhsDraft);
+fs.writeFileSync(path.join(wikiRepoDir, `Xiaohongshu-${todayStr}.md`), xhsDraft);
 
 // 電影：存一份最新、一份歷史
 fs.writeFileSync(path.join(wikiRepoDir, 'Movie-Info.md'), entContent);
