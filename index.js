@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const { generateXiaohongshuContent } = require('./xiaohongshu.js');
+const { getFuelPrice } = require('./fetcher.js'); // 👈 從新家把油價工具引進門！
 
 // 載入伺服器環境變數
 const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
