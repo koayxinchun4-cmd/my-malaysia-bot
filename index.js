@@ -1,5 +1,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { load: loadYaml } = require('js-yaml');
+
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node');
 const fs = require('fs');
@@ -259,3 +261,82 @@ function scheduleDailyUpdate() {
 
 // 啟動排程系統
 scheduleDailyUpdate();
+
+
+// ==========================================
+// 📕 核心功能：扒光小紅書網頁，抓出高清無水印圖文
+// ==========================================
+async function parseXiaohongshu(inputUrl) {
+    try {
+        // 1. 整理網址格式
+        const urlObj = new URL(inputUrl);
+        const m = urlObj.pathname.match(/\/(?:discovery\/item|explore)\/([0-9a-zA-Z]+)/);
+        let canonical = inputUrl;
+        if (m && m[1]) {
+            const token = urlObj.searchParams.get('xsec_token') || '';
+            const canonicalUrl = new URL(`https://www.xiaohongshu.com/discovery/item/${m[1]}`);
+            if (token) {
+                canonicalUrl.searchParams.set('xsec_token', token);
+                canonicalUrl.searchParams.set('xsec_source', 'pc_user');
+            }
+            canonical = canonicalUrl.toString();
+        }
+
+        // 2. 爬取網頁原始碼
+        const response = await axios.get(canonical, {
+            timeout: 10000,
+            headers: {
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                'referer': 'https://www.xiaohongshu.com/'
+            }
+        });
+
+        const html = response.data;
+        if (!html) throw new Error('空網頁回應');
+
+        // 3. 提取隱藏數據庫 window.__INITIAL_STATE__
+        const scripts = Array.from(html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi))
+            .map(m => (m[1] || '').trim())
+            .reverse();
+
+        const script = scripts.find(item => item.startsWith('window.__INITIAL_STATE__'));
+        if (!script) throw new Error('找不到小紅書初始隱藏數據庫');
+
+        const jsonText = script.replace(/^window\.__INITIAL_STATE__\s*=\s*/, '');
+        const state = loadYaml(jsonText);
+
+        // 4. 一層一層剝開，抓出文案資料
+        const note = (state && state.noteData && state.noteData.data && state.noteData.data.noteData)
+                  || (state && state.note && state.note.noteDetailMap && state.note.noteDetailMap['-1'] && state.note.noteDetailMap['-1'].note)
+                  || {};
+
+        const title = String(note.title || '未命名筆記');
+        const content = String(note.desc || '');
+        const author = String((note.user && (note.user.nickname || note.user.nickName)) || '未知作者');
+
+        // 5. 提取圖片網址並還原高清
+        const images = [];
+        if (Array.isArray(note.imageList)) {
+            for (const item of note.imageList) {
+                const imgUrl = String(item.urlDefault || item.url || '');
+                if (!imgUrl) continue;
+                
+                const cleanUrl = imgUrl.replace(/\\\//g, '/').replace(/&amp;/g, '&');
+                const parts = cleanUrl.split('/').slice(5);
+                if (parts.length) {
+                    const token = parts.join('/').split('!')[0];
+                    if (token) {
+                        images.push(`https://sns-img-bd.xhscdn.com/${token}`);
+                    }
+                }
+            }
+        }
+
+        return { title, content, author, images };
+    } catch (error) {
+        console.error('抓取小紅書失敗:', error.message);
+        return null;
+    }
+}
