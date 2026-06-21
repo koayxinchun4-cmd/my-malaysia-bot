@@ -4,7 +4,7 @@
   "description": "Malaysia Super Bot with Web Scraper and Try-Catch Protection",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node -e 'require(\"http\").createServer((req,res)=>res.end(\"OK\")).listen(process.env.PORT || 3000)' & node index.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
@@ -15,4 +15,3 @@
     "nodemailer": "^6.9.0"
   }
 }
-
