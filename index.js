@@ -101,6 +101,9 @@ async function updateMultiPageWiki() {
   homeContent += `  - 🇲🇾 [點我查看：大馬新聞 Top 10](Malaysia-News)\n\n`;
   //這是小紅書在wiki//
   homeContent += `  - 📕 [點我查看：小紅書爆款文案草稿](Xiaohongshu)\n\n`;
+  //（這是為了讓你的 Wiki 首頁多出一個專屬的「小紅書精準備份」點擊連結
+  homeContent += `  - 📸 [點我查看：小紅書精準多媒體備份](Xiaohongshu-Backup)\n\n`;
+
   homeContent += `- 🍔 **3. 娛樂與吃喝玩樂**\n`;
   homeContent += `  - 🎬 [點我查看：TGV/GSC 電影強檔](Movie-Info)\n\n`;
   homeContent += `--- \n> 💡 **防蠱小別註**：每個頁面都是獨立模組化更新的，並備有「自癒系統」，絕不卡死！`;
@@ -114,8 +117,14 @@ async function updateMultiPageWiki() {
 
     const wikiUrl = `https://${REPO_OWNER}:${GITHUB_TOKEN}@github.com/${REPO_OWNER}/${REPO_NAME}.wiki.git`;
     console.log("🔄 正在連線 GitHub Wiki 多網頁通道...");
+  
     // 假設我們想用 newsContent 當素材
 const xhsDraft = await generateXiaohongshuContent(newsContent);
+    // 🚀 發動大老神裝：精準扒光指定的小紅書貼文！
+const xhsTargetUrl = "https://www.xiaohongshu.com/explore/665ed5b0000000000d00bb39"; 
+    // ↑ 主人隨時可以換成你想抓的網址
+const xhsBackupData = await parseXiaohongshu(xhsTargetUrl);
+console.log("📸 小紅書多媒體數據已成功扒光儲存！");
 console.log("✨ AI 已為主人生成小紅書草稿：", xhsDraft);
 
     
@@ -155,6 +164,23 @@ const finalContent = `${xhsDraft}\n\n---\n\n### 🔗 本日爆款文案對應之
 // 寫入 Wiki，同時存一份最新、一份歷史
 fs.writeFileSync(path.join(wikiRepoDir, 'Xiaohongshu.md'), finalContent);
 fs.writeFileSync(path.join(wikiRepoDir, `Xiaohongshu-${todayStr}.md`), finalContent);
+    // 💥 組裝小紅書高清多媒體備份網頁
+if (xhsBackupData) {
+  let backupMd = `## 📸 小紅書高清備份：${xhsBackupData.title}\n\n`;
+  backupMd += `- 👤 **原作者**：${xhsBackupData.author}\n`;
+  backupMd += `- 📝 **完整原作內文**：\n\n> ${xhsBackupData.content.index ? xhsBackupData.content : xhsBackupData.content.replace(/\n/g, '\n> ')}\n\n`;
+  backupMd += `--- \n### 🖼️ 高清無水印原圖清單：\n\n`;
+  
+    // 自動將大老抓下來的高清 Token 網址，轉化為 Wiki 網頁看得到的圖片標籤
+  xhsBackupData.images.forEach((imgUrl, i) => {
+    backupMd += `#### 🖼️ 第 ${i + 1} 張大圖\n![小紅書高清圖片](${imgUrl})\n\n`;
+  });
+  
+  fs.writeFileSync(path.join(wikiRepoDir, 'Xiaohongshu-Backup.md'), backupMd);
+  fs.writeFileSync(path.join(wikiRepoDir, `Xiaohongshu-Backup-${todayStr}.md`), backupMd);
+}
+
+    
 
 
 // 電影：存一份最新、一份歷史
