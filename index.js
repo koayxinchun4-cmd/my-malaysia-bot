@@ -168,7 +168,7 @@ fs.writeFileSync(path.join(wikiRepoDir, `Xiaohongshu-${todayStr}.md`), finalCont
 if (xhsBackupData) {
   let backupMd = `## 📸 小紅書高清備份：${xhsBackupData.title}\n\n`;
   backupMd += `- 👤 **原作者**：${xhsBackupData.author}\n`;
-  backupMd += `- 📝 **完整原作內文**：\n\n> ${xhsBackupData.content.index ? xhsBackupData.content : xhsBackupData.content.replace(/\n/g, '\n> ')}\n\n`;
+  backupMd += `- 📝 **完整原作內文**：\n\n> ${xhsBackupData.content ? xhsBackupData.content.replace(/\n/g, '\n> ') : '無內文'}\n\n`;
   backupMd += `--- \n### 🖼️ 高清無水印原圖清單：\n\n`;
   
     // 自動將大老抓下來的高清 Token 網址，轉化為 Wiki 網頁看得到的圖片標籤
