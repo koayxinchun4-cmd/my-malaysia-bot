@@ -1,57 +1,31 @@
-// xiaohongshu.js
-const axios = require('axios');
+# 🇲🇾 Malaysia Info Bot (my-malaysia-bot)
 
-async function generateXiaohongshuContent(newsContent) {
-  console.log("🤖 小紅書 AI Agent 正在連線 Gemini 大腦...");
+這是一個運行於雲端、自動化收集大馬生活情報的 AI 機器人，專為個人使用與學習而設計。
 
-  // 1. 從 Railway 的安全後台讀取你剛剛設定的鑰匙 (這樣就不會洩漏在 Code 裡了！)
-  const apiKey = process.env.GEMINI_API_KEY; 
-  
-  if (!apiKey) {
-    console.error("❌ 找不到 GEMINI_API_KEY，請檢查 Railway 的 Variables 設定！");
-    return "API Key 缺失";
-  }
+## 🚀 核心功能
+* **油價情報**：定期爬取 [Paul Tan](https://paultan.org/) 網站，獲取最新馬來西亞燃油價格。
+* **金融數據**：抓取 BNM (馬來西亞國家銀行) 匯率資訊。
+* **娛樂資訊**：監控電影與藝文活動情報。
+* **AI Agent**：結合 **Google Gemini Flash API**，自動處理蒐集到的數據，並生成小紅書風格的社群媒體草稿。
 
-  // 2. 設定 Google Gemini 的網址 (就是主人你挖到的那串 URL)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+## 🛠 技術架構
+* **Runtime**: Node.js
+* **部署平台**: Render (Free Tier)
+* **自動化部署**: Git + GitHub
+* **遙控終端**: Termux (Android)
+* **關鍵技術**: 
+    * 使用 `axios` 進行網路請求。
+    * 使用 `http.createServer` 注入技巧以繞過 Render 端口檢查。
+    * 使用 GitHub 隱私信箱與 Token 機制實現全自動化推送。
 
+## 📁 目錄結構
+* `index.js`：機器人主程式與邏輯。
+* `package.json`：專案依賴與部署指令（含 Render 繞過邏輯）。
+* `deploy.sh`：一鍵自動化部署腳本。
 
-  // 3. 設定你的爆款小紅書提示詞 (Prompt)
-  const prompt = `
-    你現在是一個精通馬來西亞人日常與大馬趨勢的小紅書爆款文案專家。
-    請根據以下抓取到的原始新聞素材，寫一篇吸引人的小紅書風格文案：
-    
-    【原始素材】：${newsContent}
-    
-    【寫作要求】：
-    1. 標題必須極度吸睛，多用「家人們誰懂啊」、「大馬人注意」、「直接封神」等網感詞。
-    2. 內文要活潑，必須穿插大量的 Emoji 符號（✨, 🔥, 😱, 🇲🇾）。
-    3. 段落要短，多用驚嘆號，並帶有大馬當地的語氣.
-    4. 結尾必須自動附帶熱門標籤，例如：#馬來西亞 #大馬日常 #小紅書爆款。
-  `;
+## 💡 自動化操作指南
+本專案已實現一鍵部署。在 Termux 中執行以下指令即可更新機器人：
 
-  try {
-    // 4. 用 axios 把資料發送給 Google (對應你的 -d '{ "contents": ... }')
-    const response = await axios.post(url, {
-      contents: [
-        {
-          parts: [
-            { text: prompt } // 把我們設計好的爆款提示詞餵給 AI
-          ]
-        }
-      ]
-    }, {
-      headers: { 'Content-Type': 'application/json' } // 對應你的 -H 'Content-Type...'
-    });
+```bash
+./deploy.sh
 
-    // 5. 解析 Gemini 回傳的精美文案
-    const aiText = response.data.candidates[0].content.parts[0].text;
-    return aiText;
-
-  } catch (error) {
-    console.error("❌ Gemini 大腦連線失敗:", error.response?.data || error.message);
-    return "⚠️ AI 大腦暫時斷線，請稍後再試。";
-  }
-}
-
-module.exports = { generateXiaohongshuContent };

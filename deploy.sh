@@ -1,7 +1,7 @@
 #!/bin/bash
-# 自動化部署腳本
-echo "🚀 準備發射代碼到雲端..."
+echo "🚀 開始自動部署流程..."
+# git add . 會自動把所有「新增、修改、刪除」的檔案打包
 git add .
-git commit -m "自動部署: $(date +'%Y-%m-%d %H:%M:%S')"
+git commit -m "更新內容: $(date +'%Y-%m-%d %H:%M:%S')"
 git push
-echo "✅ 部署完成，機器人即將重啟！"
+echo "✅ 部署完成！GitHub 與 Render 已同步。"
