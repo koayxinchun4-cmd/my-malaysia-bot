@@ -21,5 +21,7 @@ jobs:
       - name: 安裝套件
         run: npm install
 
-      - name: 啟動機器人
+      - name: 啟動機器人並帶入金鑰
         run: node index.js
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # 👈 從保險箱借用金鑰
