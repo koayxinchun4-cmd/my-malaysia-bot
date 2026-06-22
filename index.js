@@ -1,3 +1,8 @@
+//require('dotenv').config(); // 👈 就是這一行！翻開密碼本的魔法
+
+const dayjs = require('dayjs');
+// 宣告一個新的名字叫 todayDate，用來裝格式化好的時間
+const todayDate = dayjs().format('YYYY年MM月DD日');
 const { generateXiaohongshuContent } = require('./xiaohongshu.js');
 const { fetchFuelPrices } = require('./fetcher.js'); // 1. 引入爬蟲模組
 

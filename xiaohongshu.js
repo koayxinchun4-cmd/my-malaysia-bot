@@ -1,21 +1,52 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-
-// 既然是 Private 專案，直接寫死在這裡最安全、最聽話
-const apiKey = "AQ.Ab8RN6JKcy970f10OaNM4sjekadW05Gd6boIz5oi6KOp9av4hw";
-const genAI = new GoogleGenerativeAI(apiKey);
+// 徹底拋棄不編寫死金鑰的安全直連版！
 
 async function generateXiaohongshuContent(topic, content) {
   try {
-    console.log("AI thinking...");
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    console.log("AI thinking (Direct HTTPS Fetch Mode)...");
+    
+    // ⭕️ 從環境變數讀取，並用 .trim() 確保絕對沒有被 Node.js 讀取時夾帶隱形雜質！
+    const rawKey = process.env.GEMINI_API_KEY;
+    if (!rawKey) {
+      throw new Error("找不到 GEMINI_API_KEY 環境變數，請確認是否有設定！");
+    }
+    const apiKey = rawKey.trim();
+    
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `你是一個精通馬來西亞在地生活的小紅書爆款文案專家。
+請根據以下最新抓取到的主題和數據，寫一篇吸引人、多用 Emoji、排版精美的小紅書貼文。
+主題：${topic}
+最新數據：${content}
+請包含吸引人的標題、正文、熱門標籤（如 #馬來西亞 #大馬油價 #penang 等）。`
+              }
+            ]
+          }
+        ]
+      })
+    });
 
-    const prompt = `Please write a Xiaohongshu post about ${topic}. Context: ${content}. Use emojis, light tone, local Malaysian style.`;
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(`Google API 回報錯誤 [${response.status}]: ${JSON.stringify(data)}`);
+    }
 
-    const result = await model.generateContent(prompt);
-    return result.response.text();
-  } catch (error) {
-    console.error("AI Error:", error.message);
-    return "⚠️ AI 生成失敗";
+    return data.candidates[0].content.parts[0].text;
+    
+  } catch (err) {
+    console.error("Gemini 直連核心出錯:", err.message);
+    throw err;
   }
 }
 
