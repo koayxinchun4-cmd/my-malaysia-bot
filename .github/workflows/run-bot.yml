@@ -1,0 +1,25 @@
+name: Auto Run Malaysia Fuel Bot
+
+on:
+  schedule:
+    # 每週三下午 6:00 (馬來西亞時間) 自動執行 (換算 UTC 為早上 10:00)
+    - cron: '0 10 * * 3'
+  workflow_dispatch: # 讓你在 GitHub 網頁上也能隨時手動點擊執行
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 檢查程式碼
+        uses: actions/checkout@v4
+
+      - name: 安裝 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安裝套件
+        run: npm install
+
+      - name: 啟動機器人
+        run: node index.js
