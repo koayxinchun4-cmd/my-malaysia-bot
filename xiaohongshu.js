@@ -1,27 +1,21 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// 這是你的 API Key，請把下方的 YOUR_API_KEY 替換成你從 Google AI Studio 拿到的那一串
-const genAI = new GoogleGenerativeAI(process.env.GERMINI_API);
+// 既然是 Private 專案，直接寫死在這裡最安全、最聽話
+const apiKey = "AQ.Ab8RN6JKcy970f10OaNM4sjekadW05Gd6boIz5oi6KOp9av4hw";
+const genAI = new GoogleGenerativeAI(apiKey);
 
 async function generateXiaohongshuContent(topic, content) {
   try {
-    console.log(`🧠 AI 正在思考關於 ${topic} 的爆款文案...`);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    console.log("AI thinking...");
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const prompt = `
-      請根據以下「${topic}」的情報，寫一篇適合小紅書分享的貼文。
-      要求：
-      1. 使用 Emoji 增加趣味感。
-      2. 重點突出，方便讀者快速閱讀。
-      3. 語氣輕快，像大馬在地生活博主。
-      4. 情報內容：${content}
-    `;
-    
+    const prompt = `Please write a Xiaohongshu post about ${topic}. Context: ${content}. Use emojis, light tone, local Malaysian style.`;
+
     const result = await model.generateContent(prompt);
     return result.response.text();
   } catch (error) {
-    console.error("❌ AI 生成失敗:", error);
-    return `⚠️ 關於 ${topic} 的文案生成遇到小阻礙，但情報內容依然有效。`;
+    console.error("AI Error:", error.message);
+    return "⚠️ AI 生成失敗";
   }
 }
 
