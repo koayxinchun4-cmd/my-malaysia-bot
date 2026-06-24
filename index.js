@@ -1,32 +1,43 @@
-//require('dotenv').config(); // 👈 就是這一行！翻開密碼本的魔法
+// 🇲🇾 my-malaysia-bot — BNM Exchange Rate Module
+// 自動爬取 MYR → CNY / USD / GBP / JPY / KRW 匯率
+// 零外部 API · 零 npm 依賴 · 純 Node.js 內建模組
 
 const dayjs = require('dayjs');
-// 宣告一個新的名字叫 todayDate，用來裝格式化好的時間
+const { fetchExchangeRates, CURRENCIES } = require('./fetcher');
+
 const todayDate = dayjs().format('YYYY年MM月DD日');
-const { generateXiaohongshuContent } = require('./xiaohongshu.js');
-const { fetchFuelPrices } = require('./fetcher.js'); // 1. 引入爬蟲模組
+const todayISO = dayjs().format('YYYY-MM-DD');
 
-async function updateMultiPageWiki() {
-  console.log("Core starting...");
-  
-  // 2. 自動從網路上爬取最新的真實油價數據
-  let fuelContent = await fetchFuelPrices();
-  
-  let aiPost;
+async function main() {
+  console.log(`\n═══════════════════════════════════════════`);
+  console.log(`  🇲🇾 BNM Exchange Rates — ${todayDate}`);
+  console.log(`═══════════════════════════════════════════\n`);
 
+  let rates;
   try {
-    // 3. 把新鮮抓到的真實油價數據，直接丟給 AI 去發想文案
-    aiPost = await generateXiaohongshuContent("大馬本週最新油價情報", fuelContent);
+    rates = await fetchExchangeRates();
   } catch (err) {
-    console.error("Fetch Error:", err);
-    aiPost = "⚠️ AI 貼文生成失敗";
+    console.error(`❌ Failed to fetch exchange rates: ${err.message}`);
+    process.exit(1);
   }
 
-  let homeContent = `## 🇲🇾 大馬綜合情報導覽總部\n\n`;
-  homeContent += `### 💡 AI 生成的小紅書貼文\n${aiPost}`;
-  
-  console.log("\n====== 100% 全自動生成結果 ======");
-  console.log(homeContent);
+  console.log(`  1 MYR = \n`);
+
+  for (const [code, info] of Object.entries(CURRENCIES)) {
+    if (rates[code]) {
+      const rate = parseFloat(rates[code]);
+      const rateStr = code === 'KRW' ? rate.toFixed(2) : rate.toFixed(4);
+      console.log(`  ${info.flag} ${info.symbol} ${rateStr}  ${info.name} (${code})`);
+    }
+  }
+
+  console.log(`\n───────────────────────────────────────────`);
+  console.log(`  📅 Source: BNM / currencyrate.today`);
+  console.log(`  🕐 Updated: ${todayISO}`);
+  console.log(`═══════════════════════════════════════════\n`);
 }
 
-updateMultiPageWiki();
+main().catch(err => {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});

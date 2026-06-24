@@ -1,38 +1,120 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+// BNM Exchange Rate Fetcher — 零 API，純 Node.js 爬蟲
+// 爬取 MYR → CNY / USD / GBP / JPY / KRW
+// 三層 fallback：currencyrate.today → fxrate.org → 硬編碼
 
-async function fetchFuelPrices() {
-  try {
-    console.log("正在從網路爬取大馬最新油價...");
-    
-    // 使用大馬熱門科技媒體 Soyacincau 的每週油價專頁
-    const url = 'https://soyacincau.com/tag/petrol-price/';
-    
-    // 這裡我們加一個防爬蟲的標頭，假裝我們是普通的手機瀏覽器
-    const { data } = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
+const https = require('https');
+const http = require('http');
+
+const CURRENCIES = {
+  CNY: { name: 'Chinese Yuan', symbol: '¥', flag: '🇨🇳' },
+  USD: { name: 'US Dollar', symbol: '$', flag: '🇺🇸' },
+  GBP: { name: 'British Pound', symbol: '£', flag: '🇬🇧' },
+  JPY: { name: 'Japanese Yen', symbol: '¥', flag: '🇯🇵' },
+  KRW: { name: 'South Korean Won', symbol: '₩', flag: '🇰🇷' },
+};
+
+function fetchUrl(url) {
+  return new Promise((resolve, reject) => {
+    const mod = url.startsWith('https') ? https : http;
+    const req = mod.get(url, { timeout: 10000 }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400) {
+        fetchUrl(res.headers.location).then(resolve).catch(reject);
+        return;
       }
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve(data));
     });
-
-    const $ = cheerio.load(data);
-    
-    // 撈取頁面上第一個油價文章的標題（通常最新一期的標題就會寫著：RON95: RM2.05 之類的）
-    // 如果找不到，我們會用一套防禦性的預設文字
-    let latestArticleTitle = $('.entry-title a').first().text().trim();
-    
-    if (!latestArticleTitle) {
-      latestArticleTitle = "未能抓到最新標題，預設當前油價維持：RON95 RM2.05, RON97 RM3.19, Diesel RM2.15";
-    }
-
-    console.log(`[爬蟲成功] 抓到最新油價資訊: ${latestArticleTitle}`);
-    return latestArticleTitle;
-
-  } catch (error) {
-    console.error("❌ 爬蟲出錯:", error.message);
-    // 萬一網路斷了或對方網站改版，提供安全備用資料，程式絕對不崩潰
-    return "大馬當前油價參考：RON95保持在 RM2.05，柴油與石油市場價格隨每週公告微幅變動。";
-  }
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+    req.on('error', reject);
+  });
 }
 
-module.exports = { fetchFuelPrices };
+// ── Layer 1: currencyrate.today ──
+async function fetchCurrencyRateToday() {
+  const html = await fetchUrl('https://myr.currencyrate.today/convert/amount-1-to-usd.html');
+  // The page has a "What RM 1 is worth" section, but it only lists for the target currency.
+  // Use the /convert/amount-100-to-cny.html page which shows a full table
+  const html2 = await fetchUrl('https://myr.currencyrate.today/convert/amount-100-to-cny.html');
+  
+  const rates = {};
+  // Pattern: "100 MYR to US Dollar 💵 $24.65" — extract per 100 then divide
+  const currencyMap = {
+    'US Dollar': 'USD',
+    'Chinese Yuan': 'CNY',
+    'British Pound Sterling': 'GBP',
+    'Japanese Yen': 'JPY',
+    'South Korean Won': 'KRW',
+  };
+
+  for (const [label, code] of Object.entries(currencyMap)) {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Match various formats: "$24.65" or "¥166.78" or "₩37,411.77"
+    const re = new RegExp(`100\\s+MYR\\s+to\\s+${escaped}[^<]*?([\$¥£₩])([0-9,]+(?:\\.[0-9]+)?)`);
+    const match = html2.match(re);
+    if (match) {
+      const value = parseFloat(match[2].replace(/,/g, ''));
+      rates[code] = (value / 100).toFixed(4);
+    }
+  }
+
+  if (Object.keys(rates).length >= 4) {
+    console.log('[fetcher] Layer 1 (currencyrate.today) OK');
+    return rates;
+  }
+  throw new Error('Insufficient rates from currencyrate.today');
+}
+
+// ── Layer 2: fxrate.org ──
+async function fetchFxRate() {
+  const rates = {};
+  for (const code of Object.keys(CURRENCIES)) {
+    const html = await fetchUrl(`https://fxrate.org/MYR/${code}/`);
+    // Match: "1 MYR Malaysian Ringgit ¥ 1.662 CNY Chinese Yuan" or similar
+    const re = new RegExp(`RM\\s+1\\.000\\s+[^0-9]*?([0-9]+\\.[0-9]+)`);
+    const match = html.match(re);
+    if (match) {
+      rates[code] = parseFloat(match[1]).toFixed(4);
+    }
+  }
+
+  if (Object.keys(rates).length >= 4) {
+    console.log('[fetcher] Layer 2 (fxrate.org) OK');
+    return rates;
+  }
+  throw new Error('Insufficient rates from fxrate.org');
+}
+
+// ── Layer 3: Hardcoded approximate rates (last resort) ──
+function fetchHardcoded() {
+  console.log('[fetcher] Layer 3 (hardcoded fallback) — using estimated rates');
+  return {
+    CNY: '1.6678',
+    USD: '0.2465',
+    GBP: '0.1838',
+    JPY: '39.4753',
+    KRW: '374.1177',
+  };
+}
+
+// ── Main fetcher with fallback ──
+async function fetchExchangeRates() {
+  // Layer 1
+  try {
+    return await fetchCurrencyRateToday();
+  } catch (e) {
+    console.error(`[fetcher] Layer 1 failed: ${e.message}`);
+  }
+
+  // Layer 2
+  try {
+    return await fetchFxRate();
+  } catch (e) {
+    console.error(`[fetcher] Layer 2 failed: ${e.message}`);
+  }
+
+  // Layer 3
+  return fetchHardcoded();
+}
+
+module.exports = { fetchExchangeRates, CURRENCIES };

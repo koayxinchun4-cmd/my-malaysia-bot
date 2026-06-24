@@ -1,0 +1,7 @@
+# my-malaysia-bot 定時排程
+# 部署方式 (Termux):
+#   crontab ~/my-malaysia-bot/crontab.txt
+#   crond -b  (若未啟動)
+#
+# 每週三 9AM 自動爬取 BNM 匯率
+0 9 * * 3 cd ~/my-malaysia-bot && node index.js >> logs/cron.log 2>&1
